@@ -1,0 +1,283 @@
+/*********************************************************************
+ * File    : db-schema.txt
+ * Version : 2018-03-26-01-WS
+ * Created : 2018-03-26-01-WS
+ * Author  : oxdeca.com
+ *********************************************************************/
+
+/* -------------------------------------------------------------------- */
+DROP TABLE packages;
+CREATE TABLE packages (
+   id          integer primary key autoincrement,
+   author      varchar(100),
+   owner       varchar(30),
+   name        varchar(30),
+   admin       varchar(30),
+   version     varchar(20),
+   release     varchar(3),
+   type        varchar(5),
+   branch      varchar(10),
+   prefix      varchar(100),
+   installed   timestamp,
+   desc        varchar(100),
+   url         varchar(1024),
+   files       text,
+   changes     varchar(1024),
+   backout     varchar(1024),
+   impact      varchar(1024),
+   preremove   text,
+   postremove  text
+);
+/* -------------------------------------------------------------------- */
+
+/* -------------------------------------------------------------------- */
+DROP TABLE approval;
+CREATE TABLE approval (
+   id     integer primary key autoincrement,
+   pkgid  integer,
+   date   timestamp,
+   name   varchar(30),
+   user   varchar(30),
+   text   text,
+
+   FOREIGN KEY (pkgid) REFERENCES packages(id) ON DELETE CASCADE
+);
+
+CREATE TRIGGER fki_approval_pkgid 
+BEFORE INSERT ON approval
+FOR EACH ROW BEGIN
+   SELECT RAISE(ROLLBACK, 'insert on table "approval" violates foreign key contraint "fk_approval_pkgid"')
+   WHERE NEW.pkgid IS NOT NULL AND(SELECT id FROM packages WHERE id = NEW.pkgid) IS NULL;
+END;
+
+CREATE TRIGGER fku_approval_pkgid
+BEFORE UPDATE ON approval
+FOR EACH ROW BEGIN
+   SELECT RAISE(ROLLBACK, 'update on table "approval" violates foreign key contraint "fk_approval_pkgid"')
+   WHERE NEW.pkgid IS NOT NULL AND(SELECT id FROM packages WHERE id = NEW.pkgid) IS NULL;
+END;
+
+CREATE TRIGGER fkd_approval_pkgid
+BEFORE DELETE ON packages
+FOR EACH ROW BEGIN
+   DELETE FROM approval WHERE pkgid = OLD.id;
+END;
+/* -------------------------------------------------------------------- */
+
+/* -------------------------------------------------------------------- */
+DROP TABLE test;
+CREATE TABLE test (
+   id     integer primary key autoincrement,
+   pkgid  integer,
+   date   timestamp,
+   name   varchar(30),
+   user   varchar(30),
+   text   text,
+
+   FOREIGN KEY (pkgid) REFERENCES packages(id) ON DELETE CASCADE
+);
+
+CREATE TRIGGER fki_test_pkgid 
+BEFORE INSERT ON test
+FOR EACH ROW BEGIN
+   SELECT RAISE(ROLLBACK, 'insert on table "test" violates foreign key contraint "fk_test_pkgid"')
+   WHERE NEW.pkgid IS NOT NULL AND(SELECT id FROM packages WHERE id = NEW.pkgid) IS NULL;
+END;
+
+CREATE TRIGGER fku_test_pkgid
+BEFORE UPDATE ON test
+FOR EACH ROW BEGIN
+   SELECT RAISE(ROLLBACK, 'update on table "test" violates foreign key contraint "fk_test_pkgid"')
+   WHERE NEW.pkgid IS NOT NULL AND(SELECT id FROM packages WHERE id = NEW.pkgid) IS NULL;
+END;
+
+CREATE TRIGGER fkd_test_pkgid
+BEFORE DELETE ON packages
+FOR EACH ROW BEGIN
+   DELETE FROM test WHERE pkgid = OLD.id;
+END;
+/* -------------------------------------------------------------------- */
+
+/* -------------------------------------------------------------------- */
+DROP TABLE packages_deps;
+CREATE TABLE packages_deps (
+   pkgid       integer,
+   dep_pkgid   integer,
+   primary key (pkgid, dep_pkgid),
+
+   FOREIGN KEY (pkgid)     REFERENCES packages(id) ON DELETE CASCADE,
+   FOREIGN KEY (dep_pkgid) REFERENCES packages(id) ON DELETE CASCADE
+);
+
+CREATE TRIGGER fki_packages_deps_pkgid 
+BEFORE INSERT ON packages_deps
+FOR EACH ROW BEGIN
+   SELECT RAISE(ROLLBACK, 'insert on table "packages_deps" violates foreign key contraint "fk_packages_deps_pkgid"')
+   WHERE NEW.pkgid IS NOT NULL AND(SELECT id FROM packages WHERE id = NEW.pkgid) IS NULL;
+END;
+
+CREATE TRIGGER fku_packages_deps_pkgid
+BEFORE UPDATE ON packages_deps
+FOR EACH ROW BEGIN
+   SELECT RAISE(ROLLBACK, 'update on table "packages_deps" violates foreign key contraint "fk_packages_deps_pkgid"')
+   WHERE NEW.pkgid IS NOT NULL AND(SELECT id FROM packages WHERE id = NEW.pkgid) IS NULL;
+END;
+
+CREATE TRIGGER fkd_packages_deps_pkgid
+BEFORE DELETE ON packages
+FOR EACH ROW BEGIN
+   DELETE FROM packages_deps WHERE pkgid = OLD.id;
+END;
+
+CREATE TRIGGER fki_packages_deps_dep_pkgid 
+BEFORE INSERT ON packages_deps
+FOR EACH ROW BEGIN
+   SELECT RAISE(ROLLBACK, 'insert on table "packages_deps" violates foreign key contraint "fk_packages_deps_dep_pkgid"')
+   WHERE NEW.dep_pkgid IS NOT NULL AND(SELECT id FROM packages WHERE id = NEW.dep_pkgid) IS NULL;
+END;
+
+CREATE TRIGGER fku_packages_deps_dep_pkgid
+BEFORE UPDATE ON packages_deps
+FOR EACH ROW BEGIN
+   SELECT RAISE(ROLLBACK, 'update on table "packages_deps" violates foreign key contraint "fk_packages_deps_dep_pkgid"')
+   WHERE NEW.dep_pkgid IS NOT NULL AND(SELECT id FROM packages WHERE id = NEW.dep_pkgid) IS NULL;
+END;
+
+CREATE TRIGGER fkd_packages_deps_dep_pkgid
+BEFORE DELETE ON packages
+FOR EACH ROW BEGIN
+   DELETE FROM packages_deps WHERE dep_pkgid = OLD.id;
+END;
+/* -------------------------------------------------------------------- */
+
+/* -------------------------------------------------------------------- */
+DROP TABLE deps;
+CREATE TABLE deps (
+   id         integer primary key autoincrement,
+   pkgid      integer,
+   name       varchar(30),
+   version    varchar(20),
+   release    varchar(3),
+   type       varchar(5),
+   branch     varchar(10),
+
+   FOREIGN KEY (pkgid) REFERENCES packages(id) ON DELETE CASCADE
+);
+
+CREATE TRIGGER fki_deps_pkgid
+BEFORE INSERT ON test
+FOR EACH ROW BEGIN
+   SELECT RAISE(ROLLBACK, 'insert on table "deps" violates foreign key contraint "fk_deps_pkgid"')
+   WHERE NEW.pkgid IS NOT NULL AND(SELECT id FROM packages WHERE id = NEW.pkgid) IS NULL;
+END;
+
+CREATE TRIGGER fku_deps_pkgid
+BEFORE UPDATE ON test
+FOR EACH ROW BEGIN
+   SELECT RAISE(ROLLBACK, 'update on table "deps" violates foreign key contraint "fk_deps_pkgid"')
+   WHERE NEW.pkgid IS NOT NULL AND(SELECT id FROM packages WHERE id = NEW.pkgid) IS NULL;
+END;
+
+CREATE TRIGGER fkd_deps_pkgid
+BEFORE DELETE ON packages
+FOR EACH ROW BEGIN
+   DELETE FROM deps WHERE pkgid = OLD.id;
+END;
+/* -------------------------------------------------------------------- */
+
+/* -------------------------------------------------------------------- */
+DROP TABLE packages_history;
+CREATE TABLE packages_history (
+   id             integer primary key autoincrement,
+   installed      timestamp,
+   removed        timestamp,
+   author         varchar(100),
+   owner          varchar(30),
+   name           varchar(30),
+   admin          varchar(30),
+   version        varchar(20),
+   release        varchar(3),
+   type           varchar(5),
+   branch         varchar(10),
+   prefix         varchar(100),
+   desc           varchar(100),
+   url            varchar(1024),
+   files          text,
+   test_date      timestamp,
+   test_name      varchar(30),
+   test_user      varchar(30),
+   test_text      text,
+   approval_date  timestamp,
+   approval_name  varchar(30),
+   approval_user  varchar(30),
+   approval_text  text,
+   changes        varchar(1024),
+   backout        varchar(1024),
+   impact         varchar(1024),
+   preremove      text,
+   postremove     text
+);
+
+
+CREATE TRIGGER removedPackage 
+DELETE ON packages
+BEGIN
+   INSERT INTO packages_history (
+      installed,
+      removed,
+      author,
+      owner,
+      name,
+      admin,
+      version, 
+      release,
+      type,
+      branch,
+      prefix,
+      desc,
+      url,
+      files,
+      changes,
+      backout,
+      impact,
+      preremove,
+      postremove,
+      test_date,
+      test_name,
+      test_user,
+      test_text,
+      approval_date,
+      approval_name,
+      approval_user,
+      approval_text
+   ) SELECT 
+      old.installed, 
+      DATETIME('NOW'),
+      old.author,
+      old.owner,
+      old.name,
+      old.admin,
+      old.version,
+      old.release,
+      old.type,
+      old.branch,
+      old.prefix,
+      old.desc,
+      old.url,
+      old.files,
+      old.changes,
+      old.backout,
+      old.impact,
+      old.preremove,
+      old.postremove,
+      test.date,
+      test.name,
+      test.user,
+      test.text,
+      approval.date,
+      approval.name,
+      approval.user,
+      approval.text
+      FROM packages, test, approval WHERE packages.id = test.pkgid and packages.id = approval.pkgid and packages.id = OLD.id;
+END;
+/* -------------------------------------------------------------------- */

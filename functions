@@ -1,0 +1,190 @@
+#!/bin/sh
+
+# *************************************************************************
+# * File     : functions
+# * Version  : 2018-03-26-01-WS
+# * Created  : 2018-03-26-01-WS
+# * Author   : oxdeca.com
+# * Notes    : -
+# *************************************************************************
+
+export LC_ALL=C
+
+############ GLOBALS ############
+# ----------------
+# programs
+# ----------------
+CP=/bin/cp
+TAR=/bin/tar
+RM=/bin/rm
+MV=/bin/mv
+LN=/bin/ln
+MKDIR=/bin/mkdir
+PATCH=/usr/bin/patch
+MAKE=/usr/bin/make
+SED=/bin/sed
+CAT=/bin/cat
+ECHO=/bin/echo
+CHMOD=/bin/chmod
+CHOWN=/bin/chown
+CHGRP=/bin/chgrp
+GPG=/usr/bin/gpg
+EGREP=/bin/egrep
+MD5SUM=/usr/bin/md5sum
+SHA1SUM=/usr/bin/sha1sum
+TOUCH=/usr/bin/touch
+INSTALL=/usr/bin/install
+LOADKEYS=/bin/loadkeys
+ID=/usr/bin/id
+PERL=/usr/bin/perl
+RUBY=/usr/bin/ruby
+WGET=/usr/bin/wget
+GZIP=/bin/gzip
+FIND=/usr/bin/find
+SORT=/usr/bin/sort
+DATE=/bin/date
+
+# ----------------
+# paths
+# ----------------
+BUILDROOT=/usr/src/${USER}/BUILD
+SRCDIR=/usr/src/${USER}/SOURCES
+SCRIPTDIR=/usr/src/${USER}/SCRIPTS
+PKGDIR=/usr/src/${USER}/PKGS
+BUILDSCRIPT=/usr/src/${USER}/SCRIPTS/build.sh
+
+
+# ----------------
+# color definition
+# ----------------
+BOLD="\\033[1;39m"
+DEFAULT="\\033[0;39m"
+UNDERSCORE="\\033[4;39m"
+
+# foreground colors
+F_BLACK="\\033[;30m"
+F_RED="\\033[;31m"
+F_GREEN="\\033[;32m"
+F_BROWN="\\033[;33m"
+F_BLUE="\\033[;34m"
+F_MAGENTA="\\033[;35m"
+F_CYAN="\\033[;36m"
+F_WHITE="\\033[;37m"
+F_DEFAULT="\\033[;39m"
+
+# background colors
+B_BLACK="\\033[;40m"
+B_RED="\\033[;41m"
+B_GREEN="\\033[;42m"
+B_BROWN="\\033[;43m"
+B_BLUE="\\033[;44m"
+B_MAGENTA="\\033[;45m"
+B_CYAN="\\033[;46m"
+B_WHITE="\\033[;47m"
+B_DEFAULT="\\033[;49m"
+
+#################################
+
+# **********************************************************
+# * name        : checkUser(curuser, allowed)
+# * Params      : curuser
+# *               allowed
+# * Description : check if user is allowed to start script
+# **********************************************************
+checkUser () {
+   # check arguments
+   if [ $# != 2 ]; then
+      ${ECHO} -e "${F_RED}Warning: No/Wrong Arguments specified\\041${F_DEFAULT}"
+      exit 1
+   else
+      CURUSER=$1
+      ALLOWED=$2
+   fi 
+
+   if [ "${CURUSER}" != "${ALLOWED}" ]; then
+      ${ECHO} -e "${F_RED}You are not allowed to start this script!${F_DEFAULT}"
+      exit 1
+   else
+      ${ECHO} -e "User allowed [${F_GREEN} OK ${F_DEFAULT}]"
+   fi
+}
+
+
+# **********************************************************
+# * name        : checkSignature(signaturefile, datafile)
+# * Params      : signaturefile 
+# *               datafile
+# * Description : check the signature of the signed file
+# **********************************************************
+function checkSignature () {
+   # check arguments
+   if [ $# != 2 ]; then
+      ${ECHO} -e "${F_RED}Warning: No/Wrong Arguments specified\\041${F_DEFAULT}"
+      exit 1
+   else
+      SIGNATURE=$1
+      DATAFILE=$2
+   fi 
+
+   # check source
+   CHECK=`${GPG} --verify ${SIGNATURE} ${DATAFILE} 2>&1 | ${EGREP} 'Good signature'`
+   if [ ! -z "${CHECK}" ]; then
+      ${ECHO} -e "${CHECK} [${F_GREEN} OK ${F_DEFAULT}]"
+   else
+      ${ECHO} -e "${F_RED}Bad signature!${F_DEFAULT}"
+      exit 1
+   fi
+}
+
+
+# **********************************************************
+# * name        : checkMD5(md5, datafile)
+# * Params      : md5 
+# *               datafile
+# * Description : check the md5 of the given file
+# **********************************************************
+function checkMD5 () {
+   # check arguments
+   if [ $# != 2 ]; then
+      ${ECHO} -e "${F_RED}Warning: No/Wrong Arguments specified\\041${F_DEFAULT}"
+      exit 1
+   else
+      MD5=$1
+      DATAFILE=$2
+   fi 
+
+   CURMD5=`${MD5SUM} ${DATAFILE} | cut -d" " -f1`
+   MD5=`${CAT} ${MD5} | cut -d":" -f2`
+   if [ "${CURMD5}" == "${MD5}" ]; then
+      ${ECHO} -e "${MD5} [${F_GREEN} OK ${F_DEFAULT}]"
+   else
+      ${ECHO} -e "${F_RED}Bad md5!${F_DEFAULT}"
+      exit 1
+   fi
+}
+
+# **********************************************************
+# * name        : checkSHA1(sha1, datafile)
+# * Params      : sha1 
+# *               datafile
+# * Description : check the sha1 of the given file
+# **********************************************************
+function checkSHA1 () {
+   # check arguments
+   if [ $# != 2 ]; then
+      ${ECHO} -e "${F_RED}Warning: No/Wrong Arguments specified\\041${F_DEFAULT}"
+      exit 1
+   else
+      SHA1=$1
+      DATAFILE=$2
+   fi 
+
+   CURSHA1=`${SHA1SUM} ${DATAFILE} | cut -d" " -f1`
+   SHA1=`${CAT} ${SHA1} | cut -d":" -f2`
+   if [ "${CURSHA1}" == "${SHA1}" ]; then
+      ${ECHO} -e "${SHA1} [${F_GREEN} OK ${F_DEFAULT}]"
+   else
+      ${ECHO} -e "${F_RED}Bad sha1!${F_DEFAULT}"
+      exit 1
+   fi
+}

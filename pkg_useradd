@@ -1,0 +1,21 @@
+#!/bin/bash
+
+#
+# by oxdeca.com
+#
+
+############ GLOBALS ############ 
+INSTALLGROUP=install
+INSTALLDIR=/usr/src
+#################################
+
+# read Username
+echo "Enter Username: "
+read USER
+
+# create group
+groupadd ${USER}
+# create user
+useradd -g ${USER} -G ${INSTALLGROUP} -d ${INSTALLDIR} -s /bin/bash ${USER}
+
+su - ${USER}
